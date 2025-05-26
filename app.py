@@ -52,6 +52,7 @@ st.metric("Amortisation (Jahre)", f"{amortisation:.1f}")
 # PDF & Anfrage
 if st.button("Anfrage senden"):
     st.success("Anfrage erfolgreich simuliert – (Demo-Modus)")
+
     anfrage = {
         "plz": plz,
         "verbrauch": verbrauch,
@@ -65,9 +66,16 @@ if st.button("Anfrage senden"):
         "eigenverbrauch": round(eigenverbrauch, 2),
         "ertrag": round(ertrag),
         "ersparnis": round(ersparnis),
-        "amortisation": round(amortisation, 1)
+        "amortisation": round(amortisation, 1),
+        "netzbetreiber": "unbekannt"  # Optional: ergänzen, wenn du Netzbetreiberlogik hast
     }
 
-    with open("anfrage_demo.json", "w") as f:
-        json.dump(anfrage, f, indent=2)
-    st.download_button("Anfrage als JSON herunterladen", data=json.dumps(anfrage, indent=2), file_name="anfrage.json")
+    # JSON-Download
+    st.download_button("🗂 Anfrage als JSON herunterladen", data=json.dumps(anfrage, indent=2), file_name="anfrage.json")
+
+    # 📄 PDF-Download vorbereiten
+    from pdf_export import erstelle_pdf_varianten
+    pfad = erstelle_pdf_varianten(anfrage)
+
+    with open(pfad, "rb") as f:
+        st.download_button("📄 Angebot als PDF herunterladen", f, file_name="angebot.pdf")
