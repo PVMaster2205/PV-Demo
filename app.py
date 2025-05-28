@@ -42,9 +42,10 @@ else:
     ausrichtung = None
 
 speicher = st.checkbox("Speicher gewünscht?")
-wallbox = st.checkbox("Wallbox vorhanden?")
+wallbox_geplant = st.checkbox("Wallbox gewünscht?")
+wallbox_bestehend = st.checkbox("Wallbox bereits vorhanden?")
 waermepumpe = st.checkbox("Wärmepumpe vorhanden?")
-heizstab = st.checkbox("Heizstab vorhanden?")
+heizstab = st.checkbox("Heizstab gewünscht?")
 email = st.text_input("Ihre E-Mail-Adresse")
 
 # Ertragsberechnung
@@ -64,7 +65,7 @@ else:
 # Eigenverbrauch berechnen
 eigenverbrauch = 0.3
 if speicher: eigenverbrauch += 0.3
-if wallbox: eigenverbrauch += 0.1
+if wallbox_geplant or wallbox_bestehend: eigenverbrauch += 0.1
 if waermepumpe: eigenverbrauch += 0.1
 eigenverbrauch = min(eigenverbrauch, 0.95)
 
@@ -90,7 +91,7 @@ grundpreis_kwp = 1300
 invest_pv = anlagenleistung * grundpreis_kwp
 aufschlag = 0
 if speicher: aufschlag += 6000
-if wallbox: aufschlag += 1200
+if wallbox_geplant: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
 investition_gesamt = invest_pv + aufschlag
