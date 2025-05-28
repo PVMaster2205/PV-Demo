@@ -43,10 +43,10 @@ with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
     col1, col2 = st.columns(2)
     with col1:
         speicher = st.checkbox("Speicher gewünscht?")
-        wallbox_geplant = st.checkbox("Wallbox gewünscht?")
-    with col2:
-        wallbox_bestehend = st.checkbox("Wallbox vorhanden?")
         waermepumpe = st.checkbox("Wärmepumpe vorhanden?")
+    with col2:
+        wallbox_geplant = st.checkbox("Wallbox gewünscht?")
+        wallbox_bestehend = st.checkbox("Wallbox vorhanden?")
         heizstab = st.checkbox("Heizstab vorhanden?")
 
     mit_dachdaten = st.checkbox("Ich kenne Daten zur Dachfläche und -ausrichtung")
