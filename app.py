@@ -13,12 +13,11 @@ def lade_netzbetreiber():
 
 netzbetreiber_lookup = lade_netzbetreiber()
 
+st.title("PV-Angebotsrechner Demo")
+
 # Eingaben
 plz = st.text_input("Postleitzahl")
-verbrauch = st.number_input("Stromverbrauch (kWh/Jahr)", min_value=500, max_value=15000, value=5000)
-strompreis = st.number_input("Strompreis (€/kWh)", min_value=0.1, max_value=1.0, value=0.35)
 
-# PLZ prüfen und Netzbetreiber bestimmen
 netzbetreiber = "unbekannt"
 if isinstance(plz, str) and plz.strip():
     if not re.fullmatch(r"\d{5}", plz.strip()):
@@ -27,7 +26,8 @@ if isinstance(plz, str) and plz.strip():
     else:
         netzbetreiber = netzbetreiber_lookup.get(plz.strip(), "unbekannt")
 
-st.title("PV-Angebotsrechner Demo")
+verbrauch = st.number_input("Stromverbrauch (kWh/Jahr)", min_value=500, max_value=15000, value=5000)
+strompreis = st.number_input("Strompreis (€/kWh)", min_value=0.1, max_value=1.0, value=0.35)
 
 # Neue Dachdaten-Eingabe
 mit_dachdaten = st.checkbox("Ich kenne Daten zur Dachfläche und -ausrichtung")
@@ -85,11 +85,10 @@ if speicher:
 else:
     speicher_empf = "Nicht gewünscht"
 
-# Investitionsschätzung
+# Investitionsschätzung (nur PV)
 grundpreis_kwp = 1300
 invest_pv = anlagenleistung * grundpreis_kwp
 aufschlag = 0
-if speicher: aufschlag += 6000
 if wallbox: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
@@ -101,7 +100,8 @@ st.metric("Geplante Anlagenleistung", f"{anlagenleistung:.1f} kWp")
 st.metric("Ertrag (kWh/Jahr)", f"{ertrag:.0f}")
 st.metric("Eigenverbrauchsanteil", f"{eigenverbrauch*100:.0f}%")
 st.metric("Ersparnis (€ / Jahr)", f"{ersparnis:,.0f}")
-st.metric("Geschätzte Investition", f"{investition_gesamt:,.0f} €")
+st.metric("Investition ohne Speicher", f"{invest_pv:,.0f} €")
+st.metric("Gesamtkosten mit Extras", f"{investition_gesamt:,.0f} €")
 st.metric("Empfohlene Speichergröße", speicher_empf)
 st.metric("Amortisation (Jahre)", f"{amortisation:.1f}")
 
@@ -132,8 +132,9 @@ if st.button("Anfrage senden"):
             "ertrag": round(ertrag),
             "ersparnis": round(ersparnis),
             "investition_gesamt": round(investition_gesamt),
+            "investition_ohne_speicher": round(invest_pv),
             "amortisation": round(amortisation, 1),
-            "netzbetreiber": "unbekannt"
+            "netzbetreiber": netzbetreiber
         }
 
         st.download_button("🗂 Anfrage als JSON herunterladen", data=json.dumps(anfrage, indent=2), file_name="anfrage.json")
