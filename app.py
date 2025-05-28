@@ -3,6 +3,8 @@ import json
 import pandas as pd
 import re
 
+st.set_page_config(page_title="PV-Angebotsrechner", layout="wide")
+
 # Netzbetreiber laden
 @st.cache_data
 def lade_netzbetreiber():
@@ -24,7 +26,7 @@ if isinstance(plz, str) and plz.strip():
         netzbetreiber = "ungültig"
     else:
         netzbetreiber = netzbetreiber_lookup.get(plz.strip(), "unbekannt")
-st.set_page_config(page_title="PV-Angebotsrechner", layout="wide")
+
 st.title("PV-Angebotsrechner Demo")
 
 # Neue Dachdaten-Eingabe
