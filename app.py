@@ -1,3 +1,4 @@
+# --- app.py ---
 import streamlit as st
 import json
 import pandas as pd
@@ -89,6 +90,7 @@ else:
 grundpreis_kwp = 1300
 invest_pv = anlagenleistung * grundpreis_kwp
 aufschlag = 0
+if speicher: aufschlag += 6000
 if wallbox: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
