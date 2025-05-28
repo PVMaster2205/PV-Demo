@@ -21,35 +21,45 @@ netzbetreiber_lookup = lade_netzbetreiber()
 st.title("🔆 PV-Angebotsrechner Demo")
 
 # 📋 Kundendaten
-st.subheader("👤 Kundendaten")
-name = st.text_input("Ihr Name")
-telefon = st.text_input("Telefonnummer (optional)")
-gebaeudetyp = st.selectbox("Gebäudetyp", ["Einfamilienhaus", "Doppelhaushälfte", "Mehrfamilienhaus", "Gewerbe", "Sonstige"])
-eigentuemer = st.radio("Sind Sie Eigentümer*in des Gebäudes?", ["Ja", "Nein", "Unklar / in Abstimmung"])
+title_block = st.container()
+with title_block:
+    st.subheader("👤 Kundendaten")
+    name = st.text_input("Ihr Name")
+    telefon = st.text_input("Telefonnummer (optional)")
+    gebaeudetyp = st.selectbox("Gebäudetyp", ["Einfamilienhaus", "Doppelhaushälfte", "Mehrfamilienhaus", "Gewerbe", "Sonstige"])
+    eigentuemer = st.radio("Sind Sie Eigentümer*in des Gebäudes?", ["Ja", "Nein", "Unklar / in Abstimmung"])
 
-adresse_eingabe = st.text_input("Adresseingabe (Straße, Hausnummer, PLZ, Ort)")
-st.caption("🔒 Hinweis: Zur Adressvalidierung werden Vorschläge von OpenStreetMap geladen. Es erfolgt keine Speicherung.")
+    adresse_eingabe = st.text_input("Adresseingabe (Straße, Hausnummer, PLZ, Ort)")
+    st.caption("🔒 Hinweis: Zur Adressvalidierung werden Vorschläge von OpenStreetMap geladen. Es erfolgt keine Speicherung.")
 
-vorschlaege = []
-if len(adresse_eingabe) > 5:
-    try:
-        url = "https://nominatim.openstreetmap.org/search"
-        params = {"q": adresse_eingabe, "format": "json", "addressdetails": 1, "limit": 5}
-        headers = {"User-Agent": "PV-Angebotsrechner/1.0"}
-        r = requests.get(url, params=params, headers=headers)
-        daten = r.json()
-        vorschlaege = [f"{d['display_name']}" for d in daten]
-    except Exception as e:
-        st.warning("Adressvalidierung aktuell nicht möglich.")
+    vorschlaege = []
+    plz = ""
+    if len(adresse_eingabe) > 5:
+        try:
+            url = "https://nominatim.openstreetmap.org/search"
+            params = {"q": adresse_eingabe, "format": "json", "addressdetails": 1, "limit": 5}
+            headers = {"User-Agent": "PV-Angebotsrechner/1.0"}
+            r = requests.get(url, params=params, headers=headers)
+            daten = r.json()
+            vorschlaege = [f"{d['display_name']}" for d in daten]
+        except Exception as e:
+            st.warning("Adressvalidierung aktuell nicht möglich.")
 
-validierte_adresse = st.selectbox("Vorschläge für Ihre Adresse", options=vorschlaege) if vorschlaege else ""
+    validierte_adresse = st.selectbox("Vorschläge für Ihre Adresse", options=vorschlaege) if vorschlaege else ""
+
+    if validierte_adresse:
+        try:
+            idx = vorschlaege.index(validierte_adresse)
+            plz = daten[idx]['address'].get('postcode', '')
+        except Exception:
+            plz = ""
 
 # Eingaben
 with st.container():
     st.subheader("📍 Standort & Verbrauch")
     col1, col2 = st.columns(2)
     with col1:
-        plz = st.text_input("Postleitzahl")
+        st.text_input("Postleitzahl", value=plz, disabled=True)
     with col2:
         strompreis = st.number_input("Strompreis (€/kWh)", min_value=0.1, max_value=1.0, value=0.35)
 
@@ -147,14 +157,14 @@ col5.metric("Ersparnis", f"{ersparnis:,.0f} € / Jahr")
 col6.metric("Investition", f"{investition_gesamt:,.0f} €")
 
 # Kreisdiagramm Eigenverbrauchsdeckung
-st.markdown("### 🫑 Verbrauchsdeckung durch PV")
+st.markdown("### 🧁 Verbrauchsdeckung durch PV")
 fig, ax = plt.subplots(figsize=(3, 3))
 ax.pie([eigenverbrauch, 1 - eigenverbrauch], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
 ax.axis("equal")
 st.pyplot(fig)
 
 # Balkendiagramm Verbrauch vs Ertrag
-st.markdown("### 📆 Verbrauch vs. PV-Ertrag")
+st.markdown("### 📶 Verbrauch vs. PV-Ertrag")
 df_chart = pd.DataFrame({
     "Kategorie": ["Stromverbrauch", "PV-Ertrag", "Eigenverbrauch"],
     "kWh": [verbrauch, ertrag, ertrag * eigenverbrauch]
@@ -206,7 +216,7 @@ if st.button("📩 Anfrage senden"):
             "netzbetreiber": netzbetreiber
         }
 
-        st.download_button("📂 JSON-Daten", data=json.dumps(anfrage, indent=2), file_name="anfrage.json")
+        st.download_button("🗂 JSON-Daten", data=json.dumps(anfrage, indent=2), file_name="anfrage.json")
 
         from pdf_export import erstelle_pdf_varianten
         pfad = erstelle_pdf_varianten(anfrage)
