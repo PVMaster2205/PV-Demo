@@ -13,7 +13,7 @@ netzbetreiber_lookup = lade_netzbetreiber()
 
 # PLZ prüfen und Netzbetreiber bestimmen
 netzbetreiber = "unbekannt"
-if plz.strip():
+if isinstance(plz, str) and plz.strip():
     if not re.fullmatch(r"\d{5}", plz.strip()):
         st.warning("Bitte geben Sie eine gültige 5-stellige deutsche Postleitzahl ein.")
         netzbetreiber = "ungültig"
