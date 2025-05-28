@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import altair as alt
 import re
+import requests
 
 st.set_page_config(page_title="PV-Angebotsrechner", layout="wide")
 
@@ -18,6 +19,30 @@ def lade_netzbetreiber():
 netzbetreiber_lookup = lade_netzbetreiber()
 
 st.title("🔆 PV-Angebotsrechner Demo")
+
+# 📋 Kundendaten
+st.subheader("👤 Kundendaten")
+name = st.text_input("Ihr Name")
+telefon = st.text_input("Telefonnummer (optional)")
+gebaeudetyp = st.selectbox("Gebäudetyp", ["Einfamilienhaus", "Doppelhaushälfte", "Mehrfamilienhaus", "Gewerbe", "Sonstige"])
+eigentuemer = st.radio("Sind Sie Eigentümer*in des Gebäudes?", ["Ja", "Nein", "Unklar / in Abstimmung"])
+
+adresse_eingabe = st.text_input("Adresseingabe (Straße, Hausnummer, PLZ, Ort)")
+st.caption("🔒 Hinweis: Zur Adressvalidierung werden Vorschläge von OpenStreetMap geladen. Es erfolgt keine Speicherung.")
+
+vorschlaege = []
+if len(adresse_eingabe) > 5:
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {"q": adresse_eingabe, "format": "json", "addressdetails": 1, "limit": 5}
+        headers = {"User-Agent": "PV-Angebotsrechner/1.0"}
+        r = requests.get(url, params=params, headers=headers)
+        daten = r.json()
+        vorschlaege = [f"{d['display_name']}" for d in daten]
+    except Exception as e:
+        st.warning("Adressvalidierung aktuell nicht möglich.")
+
+validierte_adresse = st.selectbox("Vorschläge für Ihre Adresse", options=vorschlaege) if vorschlaege else ""
 
 # Eingaben
 with st.container():
@@ -122,14 +147,14 @@ col5.metric("Ersparnis", f"{ersparnis:,.0f} € / Jahr")
 col6.metric("Investition", f"{investition_gesamt:,.0f} €")
 
 # Kreisdiagramm Eigenverbrauchsdeckung
-st.markdown("### 🧁 Verbrauchsdeckung durch PV")
+st.markdown("### 🫑 Verbrauchsdeckung durch PV")
 fig, ax = plt.subplots(figsize=(3, 3))
 ax.pie([eigenverbrauch, 1 - eigenverbrauch], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
 ax.axis("equal")
 st.pyplot(fig)
 
 # Balkendiagramm Verbrauch vs Ertrag
-st.markdown("### 📶 Verbrauch vs. PV-Ertrag")
+st.markdown("### 📆 Verbrauch vs. PV-Ertrag")
 df_chart = pd.DataFrame({
     "Kategorie": ["Stromverbrauch", "PV-Ertrag", "Eigenverbrauch"],
     "kWh": [verbrauch, ertrag, ertrag * eigenverbrauch]
@@ -148,9 +173,16 @@ zustimmung = st.checkbox("Ich stimme der Datenverarbeitung gemäß Datenschutzer
 if st.button("📩 Anfrage senden"):
     if not zustimmung:
         st.warning("Bitte stimmen Sie der Datenverarbeitung zu.")
+    elif not validierte_adresse:
+        st.warning("Bitte wählen Sie eine Adresse aus den Vorschlägen.")
     else:
         st.success("Anfrage erfolgreich simuliert – (Demo-Modus)")
         anfrage = {
+            "name": name,
+            "telefon": telefon,
+            "adresse": validierte_adresse,
+            "gebaeudetyp": gebaeudetyp,
+            "eigentuemer": eigentuemer,
             "plz": plz,
             "verbrauch": verbrauch,
             "strompreis": strompreis,
@@ -174,7 +206,7 @@ if st.button("📩 Anfrage senden"):
             "netzbetreiber": netzbetreiber
         }
 
-        st.download_button("🗂 JSON-Daten", data=json.dumps(anfrage, indent=2), file_name="anfrage.json")
+        st.download_button("📂 JSON-Daten", data=json.dumps(anfrage, indent=2), file_name="anfrage.json")
 
         from pdf_export import erstelle_pdf_varianten
         pfad = erstelle_pdf_varianten(anfrage)
