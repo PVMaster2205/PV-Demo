@@ -1,6 +1,22 @@
 import streamlit as st
 import json
+import pandas as pd
+import re
 
+# Netzbetreiber laden
+@st.cache_data
+def lade_netzbetreiber():
+    df = pd.read_csv("netzbetreiber.csv", dtype={"plz": str})
+    return dict(zip(df["plz"], df["netzbetreiber"]))
+
+netzbetreiber_lookup = lade_netzbetreiber()
+
+# PLZ prüfen und Netzbetreiber bestimmen
+if not re.match(r"^[0-9]{5}$", plz):
+    st.warning("Bitte geben Sie eine gültige 5-stellige deutsche Postleitzahl ein.")
+    netzbetreiber = "ungültig"
+else:
+    netzbetreiber = netzbetreiber_lookup.get(plz, "unbekannt")
 st.set_page_config(page_title="PV-Angebotsrechner", layout="wide")
 st.title("PV-Angebotsrechner Demo")
 
