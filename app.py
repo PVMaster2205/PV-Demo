@@ -1,6 +1,9 @@
 import streamlit as st
 import json
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import altair as alt
 import re
 
 st.set_page_config(page_title="PV-Angebotsrechner", layout="wide")
@@ -13,40 +16,45 @@ def lade_netzbetreiber():
 
 netzbetreiber_lookup = lade_netzbetreiber()
 
-st.title("PV-Angebotsrechner Demo")
+st.title("🔆 PV-Angebotsrechner Demo")
 
 # Eingaben
-plz = st.text_input("Postleitzahl")
+with st.container():
+    st.subheader("📍 Standort & Verbrauch")
+    col1, col2 = st.columns(2)
+    with col1:
+        plz = st.text_input("Postleitzahl")
+    with col2:
+        strompreis = st.number_input("Strompreis (€/kWh)", min_value=0.1, max_value=1.0, value=0.35)
 
-netzbetreiber = "unbekannt"
-if isinstance(plz, str) and plz.strip():
-    if not re.fullmatch(r"\d{5}", plz.strip()):
-        st.warning("Bitte geben Sie eine gültige 5-stellige deutsche Postleitzahl ein.")
-        netzbetreiber = "ungültig"
+    netzbetreiber = "unbekannt"
+    if isinstance(plz, str) and plz.strip():
+        if not re.fullmatch(r"\d{5}", plz.strip()):
+            st.warning("Bitte geben Sie eine gültige 5-stellige deutsche Postleitzahl ein.")
+            netzbetreiber = "ungültig"
+        else:
+            netzbetreiber = netzbetreiber_lookup.get(plz.strip(), "unbekannt")
+
+    verbrauch = st.number_input("Stromverbrauch (kWh/Jahr)", min_value=500, max_value=15000, value=5000)
+
+# Technische Optionen
+with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
+    speicher = st.checkbox("Speicher gewünscht?")
+    wallbox = st.checkbox("Wallbox gewünscht?")
+    waermepumpe = st.checkbox("Wärmepumpe vorhanden?")
+    heizstab = st.checkbox("Heizstab vorhanden?")
+
+    mit_dachdaten = st.checkbox("Ich kenne Daten zur Dachfläche und -ausrichtung")
+    if mit_dachdaten:
+        dachflaeche = st.number_input("Dachfläche nutzbar (m²)", min_value=5, max_value=200)
+        neigung = st.slider("Dachneigung (Grad)", 0, 90, 30)
+        ausrichtung = st.selectbox("Dachausrichtung", ["Süd", "Südost/Südwest", "Ost/West", "Nord"])
     else:
-        netzbetreiber = netzbetreiber_lookup.get(plz.strip(), "unbekannt")
+        dachflaeche = None
+        neigung = None
+        ausrichtung = None
 
-verbrauch = st.number_input("Stromverbrauch (kWh/Jahr)", min_value=500, max_value=15000, value=5000)
-strompreis = st.number_input("Strompreis (€/kWh)", min_value=0.1, max_value=1.0, value=0.35)
-
-# Neue Dachdaten-Eingabe
-mit_dachdaten = st.checkbox("Ich kenne Daten zur Dachfläche und -ausrichtung")
-
-if mit_dachdaten:
-    dachflaeche = st.number_input("Dachfläche nutzbar (m²)", min_value=5, max_value=200)
-    neigung = st.slider("Dachneigung (Grad)", 0, 90, 30)
-    ausrichtung = st.selectbox("Dachausrichtung", ["Süd", "Südost/Südwest", "Ost/West", "Nord"])
-else:
-    dachflaeche = None
-    neigung = None
-    ausrichtung = None
-
-speicher = st.checkbox("Speicher gewünscht?")
-wallbox_geplant = st.checkbox("Wallbox gewünscht?")
-wallbox_bestehend = st.checkbox("Wallbox bereits vorhanden?")
-waermepumpe = st.checkbox("Wärmepumpe vorhanden?")
-heizstab = st.checkbox("Heizstab gewünscht?")
-email = st.text_input("Ihre E-Mail-Adresse")
+email = st.text_input("📧 Ihre E-Mail-Adresse")
 
 # Ertragsberechnung
 if dachflaeche:
@@ -65,7 +73,7 @@ else:
 # Eigenverbrauch berechnen
 eigenverbrauch = 0.3
 if speicher: eigenverbrauch += 0.3
-if wallbox_geplant or wallbox_bestehend: eigenverbrauch += 0.1
+if wallbox: eigenverbrauch += 0.1
 if waermepumpe: eigenverbrauch += 0.1
 eigenverbrauch = min(eigenverbrauch, 0.95)
 
@@ -86,32 +94,53 @@ if speicher:
 else:
     speicher_empf = "Nicht gewünscht"
 
-# Investitionsschätzung (nur PV)
+# Investitionsschätzung
 grundpreis_kwp = 1300
 invest_pv = anlagenleistung * grundpreis_kwp
 aufschlag = 0
 if speicher: aufschlag += 6000
-if wallbox_geplant: aufschlag += 1200
+if wallbox: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
 investition_gesamt = invest_pv + aufschlag
 
-# Ergebnisse
-st.subheader("Simulationsergebnis")
-st.metric("Geplante Anlagenleistung", f"{anlagenleistung:.1f} kWp")
-st.metric("Ertrag (kWh/Jahr)", f"{ertrag:.0f}")
-st.metric("Eigenverbrauchsanteil", f"{eigenverbrauch*100:.0f}%")
-st.metric("Ersparnis (€ / Jahr)", f"{ersparnis:,.0f}")
-st.metric("Investition ohne Speicher", f"{invest_pv:,.0f} €")
-st.metric("Gesamtkosten mit Extras", f"{investition_gesamt:,.0f} €")
-st.metric("Empfohlene Speichergröße", speicher_empf)
-st.metric("Amortisation (Jahre)", f"{amortisation:.1f}")
+# Ergebnisse visuell
+st.subheader("📊 Simulationsergebnisse")
+col1, col2, col3 = st.columns(3)
+col1.metric("Anlagenleistung", f"{anlagenleistung:.1f} kWp")
+col2.metric("Eigenverbrauchsanteil", f"{eigenverbrauch*100:.0f}%")
+col3.metric("Amortisation", f"{amortisation:.1f} Jahre")
+
+col4, col5, col6 = st.columns(3)
+col4.metric("Ertrag", f"{ertrag:,.0f} kWh")
+col5.metric("Ersparnis", f"{ersparnis:,.0f} € / Jahr")
+col6.metric("Investition", f"{investition_gesamt:,.0f} €")
+
+# Kreisdiagramm Eigenverbrauchsdeckung
+st.markdown("### 🧁 Verbrauchsdeckung durch PV")
+fig, ax = plt.subplots()
+ax.pie([eigenverbrauch, 1 - eigenverbrauch], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
+ax.axis("equal")
+st.pyplot(fig)
+
+# Balkendiagramm Verbrauch vs Ertrag
+st.markdown("### 📶 Verbrauch vs. PV-Ertrag")
+df_chart = pd.DataFrame({
+    "Kategorie": ["Stromverbrauch", "PV-Ertrag", "Eigenverbrauch"],
+    "kWh": [verbrauch, ertrag, ertrag * eigenverbrauch]
+})
+chart = alt.Chart(df_chart).mark_bar().encode(
+    x=alt.X("Kategorie", sort=None),
+    y="kWh",
+    color=alt.Color("Kategorie", legend=None)
+).properties(width=500, height=300)
+st.altair_chart(chart, use_container_width=True)
 
 # DSGVO-konformes Opt-in
 zustimmung = st.checkbox("Ich stimme der Datenverarbeitung gemäß Datenschutzerklärung zu", value=False)
 
 # Anfrage senden
-if st.button("Anfrage senden"):
+if st.button("📩 Anfrage senden"):
     if not zustimmung:
         st.warning("Bitte stimmen Sie der Datenverarbeitung zu.")
     else:
@@ -139,10 +168,10 @@ if st.button("Anfrage senden"):
             "netzbetreiber": netzbetreiber
         }
 
-        st.download_button("🗂 Anfrage als JSON herunterladen", data=json.dumps(anfrage, indent=2), file_name="anfrage.json")
+        st.download_button("🗂 JSON-Daten", data=json.dumps(anfrage, indent=2), file_name="anfrage.json")
 
         from pdf_export import erstelle_pdf_varianten
         pfad = erstelle_pdf_varianten(anfrage)
 
         with open(pfad, "rb") as f:
-            st.download_button("📄 Angebot als PDF herunterladen", f, file_name="angebot.pdf")
+            st.download_button("📄 Angebot als PDF", f, file_name="angebot.pdf")
