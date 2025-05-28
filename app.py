@@ -1,3 +1,4 @@
+# --- app.py ---
 import streamlit as st
 import json
 import pandas as pd
@@ -118,7 +119,7 @@ col6.metric("Investition", f"{investition_gesamt:,.0f} €")
 
 # Kreisdiagramm Eigenverbrauchsdeckung
 st.markdown("### 🧁 Verbrauchsdeckung durch PV")
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(4, 4))
 ax.pie([eigenverbrauch, 1 - eigenverbrauch], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
 ax.axis("equal")
 st.pyplot(fig)
