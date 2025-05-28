@@ -11,6 +11,11 @@ def lade_netzbetreiber():
 
 netzbetreiber_lookup = lade_netzbetreiber()
 
+# Eingaben
+plz = st.text_input("Postleitzahl")
+verbrauch = st.number_input("Stromverbrauch (kWh/Jahr)", min_value=500, max_value=15000, value=5000)
+strompreis = st.number_input("Strompreis (€/kWh)", min_value=0.1, max_value=1.0, value=0.35)
+
 # PLZ prüfen und Netzbetreiber bestimmen
 netzbetreiber = "unbekannt"
 if isinstance(plz, str) and plz.strip():
@@ -21,11 +26,6 @@ if isinstance(plz, str) and plz.strip():
         netzbetreiber = netzbetreiber_lookup.get(plz.strip(), "unbekannt")
 st.set_page_config(page_title="PV-Angebotsrechner", layout="wide")
 st.title("PV-Angebotsrechner Demo")
-
-# Eingaben
-plz = st.text_input("Postleitzahl")
-verbrauch = st.number_input("Stromverbrauch (kWh/Jahr)", min_value=500, max_value=15000, value=5000)
-strompreis = st.number_input("Strompreis (€/kWh)", min_value=0.1, max_value=1.0, value=0.35)
 
 # Neue Dachdaten-Eingabe
 mit_dachdaten = st.checkbox("Ich kenne Daten zur Dachfläche und -ausrichtung")
