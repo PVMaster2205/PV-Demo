@@ -40,10 +40,13 @@ with st.container():
 
 # Technische Optionen
 with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
-    speicher = st.checkbox("Speicher gewünscht?")
-    wallbox = st.checkbox("Wallbox gewünscht?")
-    waermepumpe = st.checkbox("Wärmepumpe vorhanden?")
-    heizstab = st.checkbox("Heizstab vorhanden?")
+    col1, col2 = st.columns(2)
+    with col1:
+        speicher = st.checkbox("Speicher gewünscht?")
+        wallbox = st.checkbox("Wallbox gewünscht?")
+    with col2:
+        waermepumpe = st.checkbox("Wärmepumpe vorhanden?")
+        heizstab = st.checkbox("Heizstab vorhanden?")
 
     mit_dachdaten = st.checkbox("Ich kenne Daten zur Dachfläche und -ausrichtung")
     if mit_dachdaten:
@@ -119,7 +122,7 @@ col6.metric("Investition", f"{investition_gesamt:,.0f} €")
 
 # Kreisdiagramm Eigenverbrauchsdeckung
 st.markdown("### 🧁 Verbrauchsdeckung durch PV")
-fig, ax = plt.subplots(figsize=(4, 4))
+fig, ax = plt.subplots(figsize=(3, 3))
 ax.pie([eigenverbrauch, 1 - eigenverbrauch], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
 ax.axis("equal")
 st.pyplot(fig)
