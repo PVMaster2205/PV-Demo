@@ -1,23 +1,19 @@
 from fpdf import FPDF
 
 def erstelle_pdf_varianten(anfrage_daten, pfad="angebot_varianten.pdf"):
-    # Berechnungen für Varianten
     verbrauch = anfrage_daten["verbrauch"]
     strompreis = anfrage_daten["strompreis"]
 
-    # Variante A (z. B. 5 kWh Speicher)
     ev_a = 0.65
     ersparnis_a = verbrauch * ev_a * strompreis
     amort_a = 8000 / ersparnis_a
 
-    # Variante B (z. B. 8 kWh Speicher)
     ev_b = 0.75
     ersparnis_b = verbrauch * ev_b * strompreis
     amort_b = 10000 / ersparnis_b
 
     empfehlung = (
-        "Variante B ist wirtschaftlicher bei höherem Eigenverbrauch, "
-        "sofern Budget und Platz vorhanden."
+        "Variante B ist wirtschaftlicher bei höherem Eigenverbrauch, sofern Budget und Platz vorhanden."
     )
 
     pdf = FPDF()
@@ -33,6 +29,11 @@ def erstelle_pdf_varianten(anfrage_daten, pfad="angebot_varianten.pdf"):
     pdf.cell(0, 10, f"Netzbetreiber: {anfrage_daten['netzbetreiber']}", ln=True)
     pdf.cell(0, 10, f"Stromverbrauch: {verbrauch} kWh", ln=True)
     pdf.cell(0, 10, f"Strompreis: {strompreis:.2f} EUR/kWh", ln=True)
+    if anfrage_daten["dachflaeche"]:
+        pdf.cell(0, 10, f"Dachfläche: {anfrage_daten['dachflaeche']} m²", ln=True)
+        pdf.cell(0, 10, f"Ausrichtung: {anfrage_daten['ausrichtung']}, Neigung: {anfrage_daten['neigung']}°", ln=True)
+    pdf.cell(0, 10, f"Anlagenleistung: {anfrage_daten['anlagenleistung_kwp']} kWp", ln=True)
+    pdf.cell(0, 10, f"Investition: {anfrage_daten['investition_gesamt']} EUR", ln=True)
     pdf.ln(8)
 
     pdf.set_font("Arial", "B", 12)
