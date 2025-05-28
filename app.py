@@ -43,8 +43,9 @@ with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
     col1, col2 = st.columns(2)
     with col1:
         speicher = st.checkbox("Speicher gewünscht?")
-        wallbox = st.checkbox("Wallbox gewünscht?")
+        wallbox_geplant = st.checkbox("Wallbox gewünscht?")
     with col2:
+        wallbox_bestehend = st.checkbox("Wallbox vorhanden?")
         waermepumpe = st.checkbox("Wärmepumpe vorhanden?")
         heizstab = st.checkbox("Heizstab vorhanden?")
 
@@ -77,7 +78,7 @@ else:
 # Eigenverbrauch berechnen
 eigenverbrauch = 0.3
 if speicher: eigenverbrauch += 0.3
-if wallbox: eigenverbrauch += 0.1
+if wallbox_geplant or wallbox_bestehend: eigenverbrauch += 0.1
 if waermepumpe: eigenverbrauch += 0.1
 eigenverbrauch = min(eigenverbrauch, 0.95)
 
@@ -103,7 +104,7 @@ grundpreis_kwp = 1300
 invest_pv = anlagenleistung * grundpreis_kwp
 aufschlag = 0
 if speicher: aufschlag += 6000
-if wallbox: aufschlag += 1200
+if wallbox_geplant: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
 investition_gesamt = invest_pv + aufschlag
@@ -154,7 +155,8 @@ if st.button("📩 Anfrage senden"):
             "verbrauch": verbrauch,
             "strompreis": strompreis,
             "speicher": speicher,
-            "wallbox": wallbox,
+            "wallbox_geplant": wallbox_geplant,
+            "wallbox_bestehend": wallbox_bestehend,
             "waermepumpe": waermepumpe,
             "heizstab": heizstab,
             "email": email,
