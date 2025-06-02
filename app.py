@@ -134,15 +134,46 @@ if speicher:
 else:
     speicher_empf = "Nicht gewünscht"
 
-# Investitionsschätzung
-grundpreis_kwp = 1300
-invest_pv = anlagenleistung * grundpreis_kwp
+# Investitionsschätzung (mit gestaffelten Montagekosten)
+def montagekosten_pro_kwp(kWp):
+    if kWp < 5:
+        return 600
+    elif kWp < 6:
+        return 550
+    elif kWp < 7:
+        return 520
+    elif kWp < 8:
+        return 490
+    elif kWp < 9:
+        return 460
+    elif kWp < 10:
+        return 430
+    elif kWp < 11:
+        return 400
+    elif kWp < 12:
+        return 380
+    elif kWp < 13:
+        return 360
+    elif kWp < 14:
+        return 340
+    elif kWp < 15:
+        return 320
+    else:
+        return 300
+
+montagekosten = montagekosten_pro_kwp(anlagenleistung) * anlagenleistung
+
 aufschlag = 0
 if speicher: aufschlag += 6000
 if wallbox_geplant: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
-investition_gesamt = invest_pv + aufschlag
+
+# Zusatzkosten: Gerüst + AC-Verkabelung
+zusatzkosten = 1200 + 800
+
+invest_pv = montagekosten
+investition_gesamt = invest_pv + aufschlag + zusatzkosten
 
 # Ergebnisse visuell
 st.subheader("📊 Simulationsergebnisse")
