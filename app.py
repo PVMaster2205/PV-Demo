@@ -92,7 +92,7 @@ with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
         anlagenleistung = dachflaeche / 7
     else:
         default_leistung = verbrauch / 950
-        anlagenleistung = st.slider("Geplante PV-Anlagengröße (kWp)", min_value=1.0, max_value=20.0, value=round(default_leistung, 1), step=0.1)
+        anlagenleistung = st.slider("Geplante PV-Anlagengröße (kWp)", min_value=1.0, max_value=20.0, value=round(default_leistung, 1), step=0.44)
         ausrichtung = "Süd"
         neigung = 30
 
