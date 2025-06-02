@@ -114,10 +114,6 @@ if wallbox_geplant or wallbox_bestehend: eigenverbrauch += 0.1
 if waermepumpe: eigenverbrauch += 0.1
 eigenverbrauch = min(eigenverbrauch, 0.95)
 
-# Finanzen
-ersparnis = ertrag * eigenverbrauch * strompreis
-amortisation = investition_gesamt / ersparnis if ersparnis else 0
-
 # Speicherempfehlung
 if speicher:
     if verbrauch < 3000:
@@ -174,6 +170,10 @@ zusatzkosten = 1200 + 800  # Gerüst + AC-Verkabelung
 
 grundsystem = komponenten + montage
 investition_gesamt = grundsystem + zusatzkosten + aufschlag
+
+# Finanzen
+ersparnis = ertrag * eigenverbrauch * strompreis
+amortisation = investition_gesamt / ersparnis if ersparnis else 0
 
 # Eigenverbrauchsberechnung
 verbrauchter_pv_strom = min(ertrag * eigenverbrauch, verbrauch)
