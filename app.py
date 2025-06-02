@@ -92,7 +92,7 @@ with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
         anlagenleistung = dachflaeche / 7
     else:
         default_leistung = verbrauch / 950
-        anlagenleistung = st.slider("Geplante PV-Anlagengröße (kWp)", min_value=1.0, max_value=20.0, value=round(default_leistung, 1), step=0.44)
+        anlagenleistung = st.slider("Geplante PV-Anlagengröße (kWp)", min_value=1.0, max_value=20.0, value=round(default_leistung, 1), step=0.1)
         ausrichtung = "Süd"
         neigung = 30
 
@@ -131,7 +131,7 @@ if speicher:
 else:
     speicher_empf = "Nicht gewünscht"
 
-# Investitionsschätzung (mit gestaffelten Montagekosten)
+# Investitionsschätzung (mit Komponenten + gestaffelten Montagekosten)
 def montagekosten_pro_kwp(kWp):
     if kWp < 5:
         return 600
@@ -158,19 +158,18 @@ def montagekosten_pro_kwp(kWp):
     else:
         return 300
 
-montagekosten = montagekosten_pro_kwp(anlagenleistung) * anlagenleistung
-
+komponenten = anlagenleistung * 700
+montage = montagekosten_pro_kwp(anlagenleistung) * anlagenleistung
 aufschlag = 0
 if speicher: aufschlag += 6000
 if wallbox_geplant: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
 
-# Zusatzkosten: Gerüst + AC-Verkabelung
-zusatzkosten = 1200 + 800
+zusatzkosten = 1200 + 800  # Gerüst + AC-Verkabelung
 
-invest_pv = montagekosten
-investition_gesamt = invest_pv + aufschlag + zusatzkosten
+grundsystem = komponenten + montage
+investition_gesamt = grundsystem + zusatzkosten + aufschlag
 
 # Ergebnisse visuell
 st.subheader("📊 Simulationsergebnisse")
@@ -239,7 +238,7 @@ if st.button("📩 Anfrage senden"):
             "ertrag": round(ertrag),
             "ersparnis": round(ersparnis),
             "investition_gesamt": round(investition_gesamt),
-            "investition_ohne_speicher": round(invest_pv),
+            "investition_ohne_speicher": round(grundsystem),
             "amortisation": round(amortisation, 1),
             "netzbetreiber": netzbetreiber
         }
