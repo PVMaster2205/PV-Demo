@@ -122,14 +122,19 @@ amortisation = 8000 / ersparnis if ersparnis else 0
 if speicher:
     if verbrauch < 3000:
         speicher_empf = "3–4 kWh"
+        speicher_kosten = 4000
     elif verbrauch < 5000:
         speicher_empf = "5–6 kWh"
+        speicher_kosten = 6000
     elif verbrauch < 7000:
         speicher_empf = "6–8 kWh"
+        speicher_kosten = 7500
     else:
         speicher_empf = "8–10 kWh"
+        speicher_kosten = 9000
 else:
     speicher_empf = "Nicht gewünscht"
+    speicher_kosten = 0
 
 # Investitionsschätzung (mit Komponenten + gestaffelten Montagekosten)
 def montagekosten_pro_kwp(kWp):
@@ -160,8 +165,7 @@ def montagekosten_pro_kwp(kWp):
 
 komponenten = anlagenleistung * 700
 montage = montagekosten_pro_kwp(anlagenleistung) * anlagenleistung
-aufschlag = 0
-if speicher: aufschlag += 6000
+aufschlag = speicher_kosten
 if wallbox_geplant: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
