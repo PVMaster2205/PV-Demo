@@ -187,7 +187,7 @@ amortisation = investition_gesamt / ersparnis if ersparnis else 0
 st.subheader("📊 Simulationsergebnisse")
 col1, col2, col3 = st.columns(3)
 col1.metric("Anlagenleistung", f"{anlagenleistung:.1f} kWp")
-col2.metric("Eigenverbrauchsanteil", f"{eigenverbrauch*100:.0f}%")
+col2.metric("Eigenverbrauchsanteil", f"{verbrauchter_pv_strom:,.0f} kWh / {verbrauch:,.0f} kWh")
 col3.metric("Amortisation", f"{amortisation:.1f} Jahre")
 
 col4, col5, col6 = st.columns(3)
@@ -198,7 +198,8 @@ col6.metric("Investition", f"{investition_gesamt:,.0f} €")
 # Kreisdiagramm Eigenverbrauchsdeckung
 st.markdown("### 🧁 Verbrauchsdeckung durch PV")
 fig, ax = plt.subplots(figsize=(3, 3))
-ax.pie([eigenverbrauch, 1 - eigenverbrauch], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
+verbrauchsdeckung = verbrauchter_pv_strom / verbrauch if verbrauch else 0
+ax.pie([verbrauchsdeckung, 1 - verbrauchsdeckung], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
 ax.axis("equal")
 st.pyplot(fig)
 
@@ -206,7 +207,7 @@ st.pyplot(fig)
 st.markdown("### 📶 Verbrauch vs. PV-Ertrag")
 df_chart = pd.DataFrame({
     "Kategorie": ["Stromverbrauch", "PV-Ertrag", "Eigenverbrauch"],
-    "kWh": [verbrauch, ertrag, ertrag * eigenverbrauch]
+    "kWh": [verbrauch, ertrag, verbrauchter_pv_strom]
 })
 chart = alt.Chart(df_chart).mark_bar().encode(
     x=alt.X("Kategorie", sort=None),
