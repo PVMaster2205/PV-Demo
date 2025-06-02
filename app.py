@@ -116,7 +116,7 @@ eigenverbrauch = min(eigenverbrauch, 0.95)
 
 # Finanzen
 ersparnis = ertrag * eigenverbrauch * strompreis
-amortisation = 8000 / ersparnis if ersparnis else 0
+amortisation = investition_gesamt / ersparnis if ersparnis else 0
 
 # Speicherempfehlung
 if speicher:
@@ -174,6 +174,14 @@ zusatzkosten = 1200 + 800  # Gerüst + AC-Verkabelung
 
 grundsystem = komponenten + montage
 investition_gesamt = grundsystem + zusatzkosten + aufschlag
+
+# Eigenverbrauchsberechnung
+verbrauchter_pv_strom = min(ertrag * eigenverbrauch, verbrauch)
+einspeisung = max(ertrag - verbrauchter_pv_strom, 0)
+einspeiseverguetung = einspeisung * 0.08  # 8 Cent/kWh, anpassbar
+
+ersparnis = verbrauchter_pv_strom * strompreis + einspeiseverguetung
+amortisation = investition_gesamt / ersparnis if ersparnis else 0
 
 # Ergebnisse visuell
 st.subheader("📊 Simulationsergebnisse")
