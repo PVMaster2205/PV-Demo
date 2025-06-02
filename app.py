@@ -89,26 +89,23 @@ with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
         dachflaeche = st.number_input("Dachfläche nutzbar (m²)", min_value=5, max_value=200)
         neigung = st.slider("Dachneigung (Grad)", 0, 90, 30)
         ausrichtung = st.selectbox("Dachausrichtung", ["Süd", "Südost/Südwest", "Ost/West", "Nord"])
+        anlagenleistung = dachflaeche / 7
     else:
-        dachflaeche = None
-        neigung = None
-        ausrichtung = None
+        default_leistung = verbrauch / 950
+        anlagenleistung = st.slider("Geplante PV-Anlagengröße (kWp)", min_value=1.0, max_value=20.0, value=round(default_leistung, 1), step=0.1)
+        ausrichtung = "Süd"
+        neigung = 30
 
 email = st.text_input("📧 Ihre E-Mail-Adresse")
 
 # Ertragsberechnung
-if dachflaeche:
-    anlagenleistung = dachflaeche / 7
-    faktor = {
-        "Süd": 1.0,
-        "Südost/Südwest": 0.95,
-        "Ost/West": 0.85,
-        "Nord": 0.7
-    }[ausrichtung]
-    ertrag = anlagenleistung * 950 * faktor
-else:
-    anlagenleistung = verbrauch / 950
-    ertrag = anlagenleistung * 950
+faktor = {
+    "Süd": 1.0,
+    "Südost/Südwest": 0.95,
+    "Ost/West": 0.85,
+    "Nord": 0.7
+}[ausrichtung]
+ertrag = anlagenleistung * 950 * faktor
 
 # Eigenverbrauch berechnen
 eigenverbrauch = 0.3
