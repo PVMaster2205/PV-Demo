@@ -171,9 +171,12 @@ zusatzkosten = 1200 + 800  # Gerüst + AC-Verkabelung
 grundsystem = komponenten + montage
 investition_gesamt = grundsystem + zusatzkosten + aufschlag
 
-# Finanzen
-ersparnis = ertrag * eigenverbrauch * strompreis
-amortisation = investition_gesamt / ersparnis if ersparnis else 0
+# Eigenverbrauchsmodellierung (realistischer)
+eigenverbrauch = 0.25
+if speicher: eigenverbrauch += 0.2
+if wallbox_geplant or wallbox_bestehend: eigenverbrauch += 0.05
+if waermepumpe: eigenverbrauch += 0.05
+eigenverbrauch = min(eigenverbrauch, 0.85)
 
 # Eigenverbrauchsberechnung
 verbrauchter_pv_strom = min(ertrag * eigenverbrauch, verbrauch)
