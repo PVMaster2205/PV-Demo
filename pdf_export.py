@@ -35,23 +35,26 @@ def erstelle_pdf_varianten(anfrage_daten, pfad="angebot_varianten.pdf"):
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Speicher-Variantenvergleich (20 Jahre)", ln=True)
     pdf.set_font("Arial", "", 12)
-    for v in speicher_vergleich:
-        pdf.cell(0, 10, f"Variante {v['variante']}: {v['kwh']} kWh Speicher, ca. {v['preis']} EUR", ln=True)
-        pdf.cell(0, 10, f"  -> Eigenverbrauch: {int(v['ev']*100)}%, Ersparnis: {v['ersparnis']:.0f} EUR/Jahr, Amortisation: {v['amortisation']:.1f} Jahre", ln=True)
-        pdf.cell(0, 10, f"  -> 20-Jahres-Rendite: {v['rendite20']:,.0f} EUR", ln=True)
-    pdf.ln(5)
+    if len(speicher_vergleich) >= 2:
+        for v in speicher_vergleich:
+            pdf.cell(0, 10, f"Variante {v.get('variante', '?')}: {v.get('kwh', '?')} kWh Speicher, ca. {int(v.get('preis', 0))} EUR", ln=True)
+            pdf.cell(0, 10, f"  -> Eigenverbrauch: {int(v.get('ev', 0)*100)}%, Ersparnis: {v.get('ersparnis', 0):.0f} EUR/Jahr, Amortisation: {v.get('amortisation', 0):.1f} Jahre", ln=True)
+            pdf.cell(0, 10, f"  -> 20-Jahres-Rendite: {v.get('rendite20', 0):,.0f} EUR", ln=True)
+        pdf.ln(5)
 
-    # Empfehlung
-    pdf.set_font("Arial", "B", 12)
-    pdf.cell(0, 10, "Empfehlung", ln=True)
-    pdf.set_font("Arial", "", 12)
-    if len(speicher_vergleich) == 2 and speicher_vergleich[1]['rendite20'] > speicher_vergleich[0]['rendite20']:
-        empfehlung = "Variante B (größerer Speicher) bietet über 20 Jahre die bessere Wirtschaftlichkeit."
+        # Empfehlung
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 10, "Empfehlung", ln=True)
+        pdf.set_font("Arial", "", 12)
+        if speicher_vergleich[1]['rendite20'] > speicher_vergleich[0]['rendite20']:
+            empfehlung = "Variante B (größerer Speicher) bietet über 20 Jahre die bessere Wirtschaftlichkeit."
+        else:
+            empfehlung = "Variante A (kleinerer Speicher) ist bei begrenztem Budget wirtschaftlich sinnvoller."
+        pdf.multi_cell(0, 10, empfehlung)
     else:
-        empfehlung = "Variante A (kleinerer Speicher) ist bei begrenztem Budget wirtschaftlich sinnvoller."
-    pdf.multi_cell(0, 10, empfehlung)
-    pdf.ln(8)
+        pdf.cell(0, 10, "Keine Vergleichsdaten verfügbar.", ln=True)
 
+    pdf.ln(8)
     pdf.set_font("Arial", "I", 10)
     pdf.multi_cell(0, 8, "Hinweis: Dies ist eine automatisch generierte Simulation. "
                         "Die tatsächliche Auslegung erfolgt nach technischer Prüfung.")
