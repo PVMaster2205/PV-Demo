@@ -196,7 +196,7 @@ def speicher_variante(kwh, kosten):
     invest = grundsystem + zusatzkosten + kosten
     amort = invest / ersparnis_v if ersparnis_v else 0
     rendite = ersparnis_v * 20 - invest
-    return {\"ev\": ev, \"ersparnis\": ersparnis_v, \"amortisation\": amort, \"rendite20\": rendite, \"preis\": invest, \"kwh\": kwh}
+    return {"ev": ev, "ersparnis": ersparnis_v, "amortisation": amort, "rendite20": rendite, "preis": invest, "kwh": kwh}
 
 if speicher:
     if verbrauch < 3000: i = 0
