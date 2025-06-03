@@ -106,27 +106,20 @@ faktor = {
 }[ausrichtung]
 ertrag = anlagenleistung * 950 * faktor
 
-# Empfehlung und Investitionsschätzung
-speicher_kwh_basis = 0
-speicher_kosten = 0
-if speicher:
-    if verbrauch < 3000:
-        speicher_kwh_basis = 4
-        speicher_kosten = 4000
-    elif verbrauch < 5000:
-        speicher_kwh_basis = 6
-        speicher_kosten = 6000
-    elif verbrauch < 7000:
-        speicher_kwh_basis = 8
-        speicher_kosten = 7500
-    else:
-        speicher_kwh_basis = 10
-        speicher_kosten = 9000
-    speicher_empf = f"{speicher_kwh_basis} kWh"
-else:
-    speicher_empf = "Nicht gewünscht"
-    speicher_kwh_basis = 0
-    speicher_kosten = 0
+# Empfehlung und Investition
+speicher_staffel = [(3, 3000), (4, 4000), (6, 6000), (8, 7500), (10, 9000)]
+
+def finde_index(verbrauch):
+    if verbrauch < 3000: return 1
+    elif verbrauch < 5000: return 2
+    elif verbrauch < 7000: return 3
+    else: return 4
+
+idx = finde_index(verbrauch)
+speicher_kwh_basis, speicher_kosten_basis = speicher_staffel[idx]
+speicher_empf = f"{speicher_kwh_basis} kWh"
+
+wallbox_vorhanden = wallbox_geplant or wallbox_bestehend
 
 def montagekosten_pro_kwp(kWp):
     if kWp < 5: return 600
@@ -144,16 +137,16 @@ def montagekosten_pro_kwp(kWp):
 
 komponenten = anlagenleistung * 700
 montage = montagekosten_pro_kwp(anlagenleistung) * anlagenleistung
-aufschlag = speicher_kosten
+aufschlag = speicher_kosten_basis if speicher else 0
 if wallbox_geplant: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
+zusatzkosten = 2000
 
-zusatzkosten = 1200 + 800
 grundsystem = komponenten + montage
 investition_gesamt = grundsystem + zusatzkosten + aufschlag
 
-wallbox_vorhanden = wallbox_geplant or wallbox_bestehend
+# Eigenverbrauch berechnen
 
 def berechne_eigenverbrauch(verbrauch, ertrag, speicher_kwh, wp=False, wallbox=False):
     basis = min(verbrauch / ertrag, 1.0) * 0.25
@@ -162,21 +155,17 @@ def berechne_eigenverbrauch(verbrauch, ertrag, speicher_kwh, wp=False, wallbox=F
     ev = basis + speicheranteil + zusatz
     return min(ev, 0.95)
 
-if speicher:
-    eigenverbrauch = berechne_eigenverbrauch(verbrauch, ertrag, speicher_kwh_basis, wp=waermepumpe, wallbox=wallbox_vorhanden)
-else:
-    eigenverbrauch = berechne_eigenverbrauch(verbrauch, ertrag, 0, wp=waermepumpe, wallbox=wallbox_vorhanden)
-
+eigenverbrauch = berechne_eigenverbrauch(verbrauch, ertrag, speicher_kwh_basis, wp=waermepumpe, wallbox=wallbox_vorhanden)
 verbrauchter_pv_strom = min(ertrag * eigenverbrauch, verbrauch)
 einspeisung = max(ertrag - verbrauchter_pv_strom, 0)
-einspeiseverguetung = einspeisung * 0.08  # 8 Cent/kWh
+einspeiseverguetung = einspeisung * 0.08
 ersparnis = verbrauchter_pv_strom * strompreis + einspeiseverguetung
 amortisation = investition_gesamt / ersparnis if ersparnis else 0
+co2_einsparung = ertrag * 0.7
+rendite20 = ersparnis * 20 - investition_gesamt
 
-# Speicher-Vergleichsvarianten berechnen
+# Variantenvergleich
 speicher_vergleich = []
-speicher_staffel = [(4, 4000), (6, 6000), (8, 7500), (10, 9000)]
-
 def speicher_variante(kwh, kosten):
     ev = berechne_eigenverbrauch(verbrauch, ertrag, kwh, wp=waermepumpe, wallbox=wallbox_vorhanden)
     verbrauchter_pv = min(ertrag * ev, verbrauch)
@@ -187,55 +176,49 @@ def speicher_variante(kwh, kosten):
     rendite = ersparnis_v * 20 - invest
     return {"ev": ev, "ersparnis": ersparnis_v, "amortisation": amort, "rendite20": rendite, "preis": invest, "kwh": kwh}
 
-
 if speicher:
-    if verbrauch < 3000: i = 0
-    elif verbrauch < 5000: i = 1
-    elif verbrauch < 7000: i = 2
-    else: i = 3
-
-    kwh_a, kosten_a = speicher_staffel[i]
+    idx_lower = max(idx - 1, 0)
+    idx_upper = min(idx + 1, len(speicher_staffel) - 1)
+    kwh_a, kosten_a = speicher_staffel[idx_lower]
+    kwh_b, kosten_b = speicher_staffel[idx_upper]
     var_a = speicher_variante(kwh_a, kosten_a)
-    if i + 1 < len(speicher_staffel):
-        kwh_b, kosten_b = speicher_staffel[i + 1]
-    else:
-        kwh_b, kosten_b = kwh_a, kosten_a
     var_b = speicher_variante(kwh_b, kosten_b)
     speicher_vergleich = [{"variante": "A", **var_a}, {"variante": "B", **var_b}]
 
+# Visualisierung und Ausgabe
 
-# Ergebnisse visuell
 st.subheader("📊 Simulationsergebnisse")
 col1, col2, col3 = st.columns(3)
 col1.metric("Anlagenleistung", f"{anlagenleistung:.1f} kWp")
-col2.metric("Eigenverbrauchsanteil", f"{verbrauchter_pv_strom:,.0f} kWh / {verbrauch:,.0f} kWh")
-col3.metric("Amortisation", f"{amortisation:.1f} Jahre")
+col2.metric("Ertrag", f"{ertrag:,.0f} kWh")
+col3.metric("Speichergröße", f"{speicher_kwh_basis} kWh")
 
 col4, col5, col6 = st.columns(3)
-col4.metric("Ertrag", f"{ertrag:,.0f} kWh")
-col5.metric("Ersparnis", f"{ersparnis:,.0f} € / Jahr")
-col6.metric("Investition", f"{investition_gesamt:,.0f} €")
+col4.metric("Eigenverbrauch", f"{verbrauchter_pv_strom:,.0f} kWh ({eigenverbrauch*100:.0f}%)")
+col5.metric("Investition", f"{investition_gesamt:,.0f} €")
+col6.metric("Amortisation", f"{amortisation:.1f} Jahre")
 
-# Kreisdiagramm Eigenverbrauchsdeckung
-st.markdown("### 🧁 Verbrauchsdeckung durch PV")
-fig, ax = plt.subplots(figsize=(3, 3))
-verbrauchsdeckung = verbrauchter_pv_strom / verbrauch if verbrauch else 0
-ax.pie([verbrauchsdeckung, 1 - verbrauchsdeckung], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
-ax.axis("equal")
-st.pyplot(fig)
+col7, col8, col9 = st.columns(3)
+col7.metric("Ersparnis (Eigenverbrauch)", f"{verbrauchter_pv_strom * strompreis:,.0f} €/Jahr")
+col8.metric("Ersparnis (Einspeisung)", f"{einspeisung * 0.08:,.0f} €/Jahr")
+col9.metric("20-Jahres-Rendite", f"{rendite20:,.0f} €")
 
-# Balkendiagramm Verbrauch vs Ertrag
-st.markdown("### 📶 Verbrauch vs. PV-Ertrag")
-df_chart = pd.DataFrame({
-    "Kategorie": ["Stromverbrauch", "PV-Ertrag", "Eigenverbrauch"],
-    "kWh": [verbrauch, ertrag, verbrauchter_pv_strom]
-})
-chart = alt.Chart(df_chart).mark_bar().encode(
-    x=alt.X("Kategorie", sort=None),
-    y="kWh",
-    color=alt.Color("Kategorie", legend=None)
-).properties(width=500, height=300)
-st.altair_chart(chart, use_container_width=True)
+st.metric("CO₂-Einsparung", f"{co2_einsparung:,.0f} kg/Jahr")
+
+# Kreisdiagramme
+st.markdown(f"### 🧁 Autarkiegrad ({verbrauchter_pv_strom:,.0f} kWh PV-Strom von {verbrauch:,.0f} kWh Verbrauch)")
+fig1, ax1 = plt.subplots(figsize=(3, 3))
+autarkie = verbrauchter_pv_strom / verbrauch if verbrauch else 0
+ax1.pie([autarkie, 1 - autarkie], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
+ax1.axis("equal")
+st.pyplot(fig1)
+
+st.markdown(f"### ☀️ Eigenverbrauchsanteil ({verbrauchter_pv_strom:,.0f} kWh von {ertrag:,.0f} kWh Ertrag)")
+fig2, ax2 = plt.subplots(figsize=(3, 3))
+verbrauchsanteil = verbrauchter_pv_strom / ertrag if ertrag else 0
+ax2.pie([verbrauchsanteil, 1 - verbrauchsanteil], labels=["direkt genutzt", "Einspeisung"], autopct="%1.0f%%", colors=["#2196F3", "#FFC107"])
+ax2.axis("equal")
+st.pyplot(fig2)
 
 # DSGVO-konformes Opt-in
 zustimmung = st.checkbox("Ich stimme der Datenverarbeitung gemäß Datenschutzerklärung zu", value=False)
@@ -274,6 +257,8 @@ if st.button("📩 Anfrage senden"):
             "investition_gesamt": round(investition_gesamt),
             "investition_ohne_speicher": round(grundsystem),
             "amortisation": round(amortisation, 1),
+            "rendite20": round(rendite20),
+            "co2_einsparung": round(co2_einsparung),
             "speicher_vergleich": speicher_vergleich,
             "netzbetreiber": netzbetreiber
         }
