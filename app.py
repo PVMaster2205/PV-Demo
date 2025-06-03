@@ -91,15 +91,11 @@ with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
         ausrichtung = st.selectbox("Dachausrichtung", ["Süd", "Südost/Südwest", "Ost/West", "Nord"])
         anlagenleistung = dachflaeche / 7
     else:
+        dachflaeche = None
+        neigung = None
+        ausrichtung = "Süd"
         default_leistung = verbrauch / 950
         anlagenleistung = st.slider("Geplante PV-Anlagengröße (kWp)", min_value=2.7, max_value=19.8, value=round(default_leistung, 2), step=0.45)
-        ausrichtung = "Süd"
-        neigung = 30
-
-if not mit_dachdaten:
-    dachflaeche = None
-    neigung = None
-    ausrichtung = None
 
 email = st.text_input("📧 Ihre E-Mail-Adresse")
 
@@ -111,13 +107,6 @@ faktor = {
     "Nord": 0.7
 }[ausrichtung]
 ertrag = anlagenleistung * 950 * faktor
-
-# Eigenverbrauch berechnen
-eigenverbrauch = 0.3
-if speicher: eigenverbrauch += 0.3
-if wallbox_geplant or wallbox_bestehend: eigenverbrauch += 0.1
-if waermepumpe: eigenverbrauch += 0.1
-eigenverbrauch = min(eigenverbrauch, 0.95)
 
 # Speicherempfehlung
 if speicher:
