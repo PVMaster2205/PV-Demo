@@ -168,6 +168,10 @@ else:
     eigenverbrauch = berechne_eigenverbrauch(verbrauch, ertrag, 0, wp=waermepumpe, wallbox=wallbox_vorhanden)
 
 verbrauchter_pv_strom = min(ertrag * eigenverbrauch, verbrauch)
+einspeisung = max(ertrag - verbrauchter_pv_strom, 0)
+einspeiseverguetung = einspeisung * 0.08  # 8 Cent/kWh
+ersparnis = verbrauchter_pv_strom * strompreis + einspeiseverguetung
+amortisation = investition_gesamt / ersparnis if ersparnis else 0
 
 # Speicher-Vergleichsvarianten berechnen
 speicher_vergleich = []
