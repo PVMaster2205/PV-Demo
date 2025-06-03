@@ -167,6 +167,8 @@ if speicher:
 else:
     eigenverbrauch = berechne_eigenverbrauch(verbrauch, ertrag, 0, wp=waermepumpe, wallbox=wallbox_vorhanden)
 
+verbrauchter_pv_strom = min(ertrag * eigenverbrauch, verbrauch)
+
 # Speicher-Vergleichsvarianten berechnen
 speicher_vergleich = []
 speicher_staffel = [(4, 4000), (6, 6000), (8, 7500), (10, 9000)]
