@@ -96,6 +96,11 @@ with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
         ausrichtung = "Süd"
         neigung = 30
 
+if not mit_dachdaten:
+    dachflaeche = None
+    neigung = None
+    ausrichtung = None
+
 email = st.text_input("📧 Ihre E-Mail-Adresse")
 
 # Ertragsberechnung
