@@ -284,6 +284,7 @@ if st.button("📩 Anfrage senden"):
             "investition_gesamt": round(investition_gesamt),
             "investition_ohne_speicher": round(grundsystem),
             "amortisation": round(amortisation, 1),
+            "speicher_vergleich": speicher_vergleich,
             "netzbetreiber": netzbetreiber
         }
 
