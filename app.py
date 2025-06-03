@@ -178,6 +178,42 @@ einspeiseverguetung = einspeisung * 0.08  # 8 Cent/kWh, anpassbar
 ersparnis = verbrauchter_pv_strom * strompreis + einspeiseverguetung
 amortisation = investition_gesamt / ersparnis if ersparnis else 0
 
+# Speicher-Vergleichsvarianten berechnen
+speicher_vergleich = []
+speicher_staffel = [(4, 4000), (6, 6000), (8, 7500), (10, 9000)]
+
+def speicher_variante(kwh, kosten):
+    ev = 0.25
+    if kwh >= 4: ev += 0.15
+    if kwh >= 6: ev += 0.2
+    if kwh >= 8: ev += 0.25
+    if wallbox_geplant or wallbox_bestehend: ev += 0.05
+    if waermepumpe: ev += 0.05
+    ev = min(ev, 0.85)
+    verbrauchter_pv = min(ertrag * ev, verbrauch)
+    einspeisung_v = max(ertrag - verbrauchter_pv, 0)
+    ersparnis_v = verbrauchter_pv * strompreis + einspeisung_v * 0.08
+    invest = grundsystem + zusatzkosten + kosten
+    amort = invest / ersparnis_v if ersparnis_v else 0
+    rendite = ersparnis_v * 20 - invest
+    return {\"ev\": ev, \"ersparnis\": ersparnis_v, \"amortisation\": amort, \"rendite20\": rendite, \"preis\": invest, \"kwh\": kwh}
+
+if speicher:
+    if verbrauch < 3000: i = 0
+    elif verbrauch < 5000: i = 1
+    elif verbrauch < 7000: i = 2
+    else: i = 3
+
+    kwh_a, kosten_a = speicher_staffel[i]
+    var_a = speicher_variante(kwh_a, kosten_a)
+    if i + 1 < len(speicher_staffel):
+        kwh_b, kosten_b = speicher_staffel[i + 1]
+    else:
+        kwh_b, kosten_b = kwh_a, kosten_a
+    var_b = speicher_variante(kwh_b, kosten_b)
+    speicher_vergleich = [{\"variante\": \"A\", **var_a}, {\"variante\": \"B\", **var_b}]
+
+
 # Ergebnisse visuell
 st.subheader("📊 Simulationsergebnisse")
 col1, col2, col3 = st.columns(3)
