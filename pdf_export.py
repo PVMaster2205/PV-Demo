@@ -2,27 +2,7 @@
 from fpdf import FPDF
 
 def erstelle_pdf_varianten(anfrage_daten, pfad="angebot_varianten.pdf"):
-    verbrauch = anfrage_daten["verbrauch"]
-    strompreis = anfrage_daten["strompreis"]
-
-    # Variante A: 5 kWh Speicher
-    ev_a = 0.65
-    preis_a = 6000
-    ersparnis_a = verbrauch * ev_a * strompreis
-    amort_a = preis_a / ersparnis_a
-    kapitalrendite_a = ersparnis_a * 20 - preis_a
-
-    # Variante B: 8 kWh Speicher
-    ev_b = 0.75
-    preis_b = 9000
-    ersparnis_b = verbrauch * ev_b * strompreis
-    amort_b = preis_b / ersparnis_b
-    kapitalrendite_b = ersparnis_b * 20 - preis_b
-
-    if kapitalrendite_b > kapitalrendite_a:
-        empfehlung = "Variante B bietet die höhere Wirtschaftlichkeit über 20 Jahre – ideal bei langfristiger Planung."
-    else:
-        empfehlung = "Variante A bietet die bessere Rentabilität bei geringeren Investitionskosten."
+    speicher_vergleich = anfrage_daten.get("speicher_vergleich", [])
 
     pdf = FPDF()
     pdf.add_page()
@@ -47,23 +27,26 @@ def erstelle_pdf_varianten(anfrage_daten, pfad="angebot_varianten.pdf"):
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 10, f"PLZ: {anfrage_daten['plz']}", ln=True)
     pdf.cell(0, 10, f"Netzbetreiber: {anfrage_daten['netzbetreiber']}", ln=True)
-    pdf.cell(0, 10, f"Stromverbrauch: {verbrauch} kWh", ln=True)
-    pdf.cell(0, 10, f"Strompreis: {strompreis:.2f} EUR/kWh", ln=True)
+    pdf.cell(0, 10, f"Stromverbrauch: {anfrage_daten['verbrauch']} kWh", ln=True)
+    pdf.cell(0, 10, f"Strompreis: {anfrage_daten['strompreis']:.2f} EUR/kWh", ln=True)
     pdf.ln(8)
 
     # Speicher-Vergleich
     pdf.set_font("Arial", "B", 12)
-    pdf.cell(0, 10, "Speicher-Variantenvergleich", ln=True)
+    pdf.cell(0, 10, "Speicher-Variantenvergleich (20 Jahre)", ln=True)
     pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Variante A: 5 kWh Speicher (ca. {preis_a} EUR)", ln=True)
-    pdf.cell(0, 10, f"  -> Eigenverbrauch: {int(ev_a*100)}%, Ersparnis: {ersparnis_a:.0f} EUR/Jahr, Amortisation: {amort_a:.1f} Jahre", ln=True)
-    pdf.cell(0, 10, f"Variante B: 8 kWh Speicher (ca. {preis_b} EUR)", ln=True)
-    pdf.cell(0, 10, f"  -> Eigenverbrauch: {int(ev_b*100)}%, Ersparnis: {ersparnis_b:.0f} EUR/Jahr, Amortisation: {amort_b:.1f} Jahre", ln=True)
-    pdf.ln(8)
+    for v in speicher_vergleich:
+        pdf.cell(0, 10, f"Variante {v['variante']} (ca. {v['preis']} EUR)", ln=True)
+        pdf.cell(0, 10, f"  -> Eigenverbrauch: {int(v['ev']*100)}%, Ersparnis: {v['ersparnis']:.0f} EUR/Jahr, Amortisation: {v['amortisation']:.1f} Jahre", ln=True)
 
+    pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Empfehlung", ln=True)
     pdf.set_font("Arial", "", 12)
+    if speicher_vergleich and speicher_vergleich[1]['rendite20'] > speicher_vergleich[0]['rendite20']:
+        empfehlung = "Variante B (größerer Speicher) bietet über 20 Jahre die bessere Wirtschaftlichkeit."
+    else:
+        empfehlung = "Variante A (kleinerer Speicher) ist bei begrenztem Budget wirtschaftlich sinnvoller."
     pdf.multi_cell(0, 10, empfehlung)
     pdf.ln(8)
 
