@@ -10,7 +10,6 @@ import requests
 
 st.set_page_config(page_title="PV-Angebotsrechner", layout="wide")
 
-# Netzbetreiber laden
 @st.cache_data
 def lade_netzbetreiber():
     df = pd.read_csv("netzbetreiber.csv", dtype={"plz": str})
@@ -21,8 +20,7 @@ netzbetreiber_lookup = lade_netzbetreiber()
 st.title("🔆 PV-Angebotsrechner Demo")
 
 # 📋 Kundendaten
-title_block = st.container()
-with title_block:
+with st.container():
     st.subheader("👤 Kundendaten")
     name = st.text_input("Ihr Name")
     telefon = st.text_input("Telefonnummer (optional)")
@@ -42,7 +40,7 @@ with title_block:
             r = requests.get(url, params=params, headers=headers)
             daten = r.json()
             vorschlaege = [f"{d['display_name']}" for d in daten]
-        except Exception as e:
+        except Exception:
             st.warning("Adressvalidierung aktuell nicht möglich.")
 
     validierte_adresse = st.selectbox("Vorschläge für Ihre Adresse", options=vorschlaege) if vorschlaege else ""
