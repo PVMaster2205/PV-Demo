@@ -106,50 +106,41 @@ faktor = {
 }[ausrichtung]
 ertrag = anlagenleistung * 950 * faktor
 
-# Speicherempfehlung
+# Empfehlung und Investitionsschätzung
+speicher_kwh_basis = 0
+speicher_kosten = 0
 if speicher:
     if verbrauch < 3000:
-        speicher_empf = "3–4 kWh"
+        speicher_kwh_basis = 4
         speicher_kosten = 4000
     elif verbrauch < 5000:
-        speicher_empf = "5–6 kWh"
+        speicher_kwh_basis = 6
         speicher_kosten = 6000
     elif verbrauch < 7000:
-        speicher_empf = "6–8 kWh"
+        speicher_kwh_basis = 8
         speicher_kosten = 7500
     else:
-        speicher_empf = "8–10 kWh"
+        speicher_kwh_basis = 10
         speicher_kosten = 9000
+    speicher_empf = f"{speicher_kwh_basis} kWh"
 else:
     speicher_empf = "Nicht gewünscht"
+    speicher_kwh_basis = 0
     speicher_kosten = 0
 
-# Investitionsschätzung (mit Komponenten + gestaffelten Montagekosten)
 def montagekosten_pro_kwp(kWp):
-    if kWp < 5:
-        return 600
-    elif kWp < 6:
-        return 550
-    elif kWp < 7:
-        return 520
-    elif kWp < 8:
-        return 490
-    elif kWp < 9:
-        return 460
-    elif kWp < 10:
-        return 430
-    elif kWp < 11:
-        return 400
-    elif kWp < 12:
-        return 380
-    elif kWp < 13:
-        return 360
-    elif kWp < 14:
-        return 340
-    elif kWp < 15:
-        return 320
-    else:
-        return 300
+    if kWp < 5: return 600
+    elif kWp < 6: return 550
+    elif kWp < 7: return 520
+    elif kWp < 8: return 490
+    elif kWp < 9: return 460
+    elif kWp < 10: return 430
+    elif kWp < 11: return 400
+    elif kWp < 12: return 380
+    elif kWp < 13: return 360
+    elif kWp < 14: return 340
+    elif kWp < 15: return 320
+    else: return 300
 
 komponenten = anlagenleistung * 700
 montage = montagekosten_pro_kwp(anlagenleistung) * anlagenleistung
@@ -158,38 +149,30 @@ if wallbox_geplant: aufschlag += 1200
 if waermepumpe: aufschlag += 4000
 if heizstab: aufschlag += 800
 
-zusatzkosten = 1200 + 800  # Gerüst + AC-Verkabelung
-
+zusatzkosten = 1200 + 800
 grundsystem = komponenten + montage
 investition_gesamt = grundsystem + zusatzkosten + aufschlag
 
-# Eigenverbrauchsmodellierung (realistischer)
-eigenverbrauch = 0.25
-if speicher: eigenverbrauch += 0.2
-if wallbox_geplant or wallbox_bestehend: eigenverbrauch += 0.05
-if waermepumpe: eigenverbrauch += 0.05
-eigenverbrauch = min(eigenverbrauch, 0.85)
+wallbox_vorhanden = wallbox_geplant or wallbox_bestehend
 
-# Eigenverbrauchsberechnung
-verbrauchter_pv_strom = min(ertrag * eigenverbrauch, verbrauch)
-einspeisung = max(ertrag - verbrauchter_pv_strom, 0)
-einspeiseverguetung = einspeisung * 0.08  # 8 Cent/kWh, anpassbar
+def berechne_eigenverbrauch(verbrauch, ertrag, speicher_kwh, wp=False, wallbox=False):
+    basis = min(verbrauch / ertrag, 1.0) * 0.25
+    speicheranteil = min(speicher_kwh / 10, 1.0) * 0.5
+    zusatz = 0.05 * int(wallbox) + 0.05 * int(wp)
+    ev = basis + speicheranteil + zusatz
+    return min(ev, 0.95)
 
-ersparnis = verbrauchter_pv_strom * strompreis + einspeiseverguetung
-amortisation = investition_gesamt / ersparnis if ersparnis else 0
+if speicher:
+    eigenverbrauch = berechne_eigenverbrauch(verbrauch, ertrag, speicher_kwh_basis, wp=waermepumpe, wallbox=wallbox_vorhanden)
+else:
+    eigenverbrauch = berechne_eigenverbrauch(verbrauch, ertrag, 0, wp=waermepumpe, wallbox=wallbox_vorhanden)
 
 # Speicher-Vergleichsvarianten berechnen
 speicher_vergleich = []
 speicher_staffel = [(4, 4000), (6, 6000), (8, 7500), (10, 9000)]
 
 def speicher_variante(kwh, kosten):
-    ev = 0.25
-    if kwh >= 4: ev += 0.15
-    if kwh >= 6: ev += 0.2
-    if kwh >= 8: ev += 0.25
-    if wallbox_geplant or wallbox_bestehend: ev += 0.05
-    if waermepumpe: ev += 0.05
-    ev = min(ev, 0.85)
+    ev = berechne_eigenverbrauch(verbrauch, ertrag, kwh, wp=waermepumpe, wallbox=wallbox_vorhanden)
     verbrauchter_pv = min(ertrag * ev, verbrauch)
     einspeisung_v = max(ertrag - verbrauchter_pv, 0)
     ersparnis_v = verbrauchter_pv * strompreis + einspeisung_v * 0.08
@@ -197,6 +180,7 @@ def speicher_variante(kwh, kosten):
     amort = invest / ersparnis_v if ersparnis_v else 0
     rendite = ersparnis_v * 20 - invest
     return {"ev": ev, "ersparnis": ersparnis_v, "amortisation": amort, "rendite20": rendite, "preis": invest, "kwh": kwh}
+
 
 if speicher:
     if verbrauch < 3000: i = 0
