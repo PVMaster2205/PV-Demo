@@ -211,7 +211,7 @@ if speicher:
     else:
         kwh_b, kosten_b = kwh_a, kosten_a
     var_b = speicher_variante(kwh_b, kosten_b)
-    speicher_vergleich = [{\"variante\": \"A\", **var_a}, {\"variante\": \"B\", **var_b}]
+    speicher_vergleich = [{"variante": "A", **var_a}, {"variante": "B", **var_b}]
 
 
 # Ergebnisse visuell
