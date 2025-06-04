@@ -118,6 +118,7 @@ def finde_index(verbrauch):
 idx = finde_index(verbrauch)
 speicher_kwh_basis, speicher_kosten_basis = speicher_staffel[idx]
 speicher_empf = f"{speicher_kwh_basis} kWh"
+speicher_kwh_aktiv = speicher_kwh_basis if speicher else 0
 
 wallbox_vorhanden = wallbox_geplant or wallbox_bestehend
 
@@ -155,7 +156,13 @@ def berechne_eigenverbrauch(verbrauch, ertrag, speicher_kwh, wp=False, wallbox=F
     ev = basis + speicheranteil + zusatz
     return min(ev, 0.95)
 
-eigenverbrauch = berechne_eigenverbrauch(verbrauch, ertrag, speicher_kwh_basis, wp=waermepumpe, wallbox=wallbox_vorhanden)
+eigenverbrauch = berechne_eigenverbrauch(
+    verbrauch,
+    ertrag,
+    speicher_kwh_aktiv,
+    wp=waermepumpe,
+    wallbox=wallbox_vorhanden,
+)
 verbrauchter_pv_strom = min(ertrag * eigenverbrauch, verbrauch)
 einspeisung = max(ertrag - verbrauchter_pv_strom, 0)
 einspeiseverguetung = einspeisung * 0.08
@@ -190,11 +197,18 @@ if speicher:
 st.subheader("📊 Simulationsergebnisse")
 col1, col2, col3 = st.columns(3)
 col1.metric("Anlagenleistung", f"{anlagenleistung:.1f} kWp")
-col2.metric("Ertrag", f"{ertrag:,.0f} kWh")
-col3.metric("Speichergröße", f"{speicher_kwh_basis} kWh")
+col2.metric(
+    "Ertrag/Eigenverbrauch",
+    f"{ertrag:,.0f} kWh / {verbrauchter_pv_strom:,.0f} kWh",
+)
+speicher_anzeige = f"{speicher_kwh_basis} kWh" if speicher else ""
+col3.metric("Speichergröße", speicher_anzeige)
 
 col4, col5, col6 = st.columns(3)
-col4.metric("Eigenverbrauch", f"{verbrauchter_pv_strom:,.0f} kWh ({eigenverbrauch*100:.0f}%)")
+col4.metric(
+    "Verbrauch/gedeckt durch PV",
+    f"{verbrauch:,.0f} kWh / {verbrauchter_pv_strom:,.0f} kWh",
+)
 col5.metric("Investition", f"{investition_gesamt:,.0f} €")
 col6.metric("Amortisation", f"{amortisation:.1f} Jahre")
 
@@ -250,7 +264,7 @@ if st.button("📩 Anfrage senden"):
             "neigung": neigung,
             "ausrichtung": ausrichtung,
             "anlagenleistung_kwp": round(anlagenleistung, 1),
-            "empfohlene_speichergröße": speicher_empf,
+            "empfohlene_speichergröße": speicher_empf if speicher else "",
             "eigenverbrauch": round(eigenverbrauch, 2),
             "ertrag": round(ertrag),
             "ersparnis": round(ersparnis),

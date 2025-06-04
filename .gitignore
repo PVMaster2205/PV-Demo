@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+.devcontainer/
+*.pyc
+.idea/
+.vscode/
