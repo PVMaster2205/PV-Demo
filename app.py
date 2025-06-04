@@ -174,14 +174,33 @@ rendite20 = ersparnis * 20 - investition_gesamt
 # Variantenvergleich
 speicher_vergleich = []
 def speicher_variante(kwh, kosten):
-    ev = berechne_eigenverbrauch(verbrauch, ertrag, kwh, wp=waermepumpe, wallbox=wallbox_vorhanden)
+    ev = berechne_eigenverbrauch(
+        verbrauch,
+        ertrag,
+        kwh,
+        wp=waermepumpe,
+        wallbox=wallbox_vorhanden,
+    )
     verbrauchter_pv = min(ertrag * ev, verbrauch)
     einspeisung_v = max(ertrag - verbrauchter_pv, 0)
     ersparnis_v = verbrauchter_pv * strompreis + einspeisung_v * 0.08
     invest = grundsystem + zusatzkosten + kosten
+    if wallbox_geplant:
+        invest += 1200
+    if waermepumpe:
+        invest += 4000
+    if heizstab:
+        invest += 800
     amort = invest / ersparnis_v if ersparnis_v else 0
     rendite = ersparnis_v * 20 - invest
-    return {"ev": ev, "ersparnis": ersparnis_v, "amortisation": amort, "rendite20": rendite, "preis": invest, "kwh": kwh}
+    return {
+        "ev": ev,
+        "ersparnis": ersparnis_v,
+        "amortisation": amort,
+        "rendite20": rendite,
+        "preis": invest,
+        "kwh": kwh,
+    }
 
 if speicher:
     idx_lower = max(idx - 1, 0)
@@ -220,7 +239,7 @@ col9.metric("20-Jahres-Rendite", f"{rendite20:,.0f} €")
 st.metric("CO₂-Einsparung", f"{co2_einsparung:,.0f} kg/Jahr")
 
 # Kreisdiagramme
-st.markdown(f"### 🧁 Autarkiegrad ({verbrauchter_pv_strom:,.0f} kWh PV-Strom von {verbrauch:,.0f} kWh Verbrauch)")
+st.markdown(f"### Autarkiegrad")
 fig1, ax1 = plt.subplots(figsize=(3, 3))
 autarkie = verbrauchter_pv_strom / verbrauch if verbrauch else 0
 ax1.pie([autarkie, 1 - autarkie], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])

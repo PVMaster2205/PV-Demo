@@ -31,6 +31,25 @@ def erstelle_pdf_varianten(anfrage_daten, pfad="angebot_varianten.pdf"):
     pdf.cell(0, 10, f"Strompreis: {anfrage_daten['strompreis']:.2f} EUR/kWh", ln=True)
     pdf.ln(8)
 
+    # Simulationsergebnisse aus der App
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, "Simulationsergebnisse", ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 10, f"Anlagenleistung: {anfrage_daten.get('anlagenleistung_kwp', '')} kWp", ln=True)
+    if anfrage_daten.get('empfohlene_speichergröße'):
+        pdf.cell(0, 10, f"Empfohlene Speichergröße: {anfrage_daten['empfohlene_speichergröße']}", ln=True)
+    ev_prozent = int(anfrage_daten.get('eigenverbrauch', 0) * 100)
+    pdf.cell(0, 10, f"Eigenverbrauch: {ev_prozent}%", ln=True)
+    pdf.cell(0, 10, f"Ertrag: {anfrage_daten.get('ertrag', 0):,} kWh/Jahr", ln=True)
+    pdf.cell(0, 10, f"Ersparnis: {anfrage_daten.get('ersparnis', 0):,} EUR/Jahr", ln=True)
+    pdf.cell(0, 10, f"Investition (gesamt): {anfrage_daten.get('investition_gesamt', 0):,} EUR", ln=True)
+    pdf.cell(0, 10, f"Investition ohne Speicher: {anfrage_daten.get('investition_ohne_speicher', 0):,} EUR", ln=True)
+    pdf.cell(0, 10, f"Amortisation: {anfrage_daten.get('amortisation', 0)} Jahre", ln=True)
+    pdf.cell(0, 10, f"20-Jahres-Rendite: {anfrage_daten.get('rendite20', 0):,} EUR", ln=True)
+    # PDF generation uses Latin-1 encoding, so avoid special characters
+    pdf.cell(0, 10, f"CO2-Einsparung: {anfrage_daten.get('co2_einsparung', 0):,} kg/Jahr", ln=True)
+    pdf.ln(8)
+
     # Speicher-Vergleich
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Speicher-Variantenvergleich (20 Jahre)", ln=True)
