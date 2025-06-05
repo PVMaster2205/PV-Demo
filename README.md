@@ -8,3 +8,8 @@ Ein interaktives Tool zur Berechnung und Simulation von Photovoltaik-Anlagen ink
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+
+## Hinweis zur Autarkieberechnung
+
+Der angezeigte Autarkiegrad basiert auf einer stark vereinfachten Berechnung und
+kann von den realen Werten abweichen.

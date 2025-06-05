@@ -2,9 +2,7 @@
 import streamlit as st
 import json
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-import altair as alt
 import re
 import requests
 
@@ -150,8 +148,8 @@ investition_gesamt = grundsystem + zusatzkosten + aufschlag
 # Eigenverbrauch berechnen
 
 def berechne_eigenverbrauch(verbrauch, ertrag, speicher_kwh, wp=False, wallbox=False):
-    basis = min(verbrauch / ertrag, 1.0) * 0.25
-    speicheranteil = min(speicher_kwh / 10, 1.0) * 0.5
+    basis = min(verbrauch / ertrag, 1.0) * 0.2
+    speicheranteil = min(speicher_kwh / 10, 1.0) * 0.35
     zusatz = 0.05 * int(wallbox) + 0.05 * int(wp)
     ev = basis + speicheranteil + zusatz
     return min(ev, 0.95)
@@ -168,8 +166,12 @@ einspeisung = max(ertrag - verbrauchter_pv_strom, 0)
 einspeiseverguetung = einspeisung * 0.08
 ersparnis = verbrauchter_pv_strom * strompreis + einspeiseverguetung
 amortisation = investition_gesamt / ersparnis if ersparnis else 0
-co2_einsparung = ertrag * 0.7
-rendite20 = ersparnis * 20 - investition_gesamt
+co2_einsparung = ertrag * 0.38
+strompreissteigerung = 3.5 / 100
+steiger_faktor = ((1 + strompreissteigerung) ** 20 - 1) / strompreissteigerung
+total_ev = verbrauchter_pv_strom * strompreis * steiger_faktor
+total_einspeise = einspeisung * 0.08 * 20
+rendite20 = total_ev + total_einspeise - investition_gesamt
 
 # Variantenvergleich
 speicher_vergleich = []
@@ -192,7 +194,10 @@ def speicher_variante(kwh, kosten):
     if heizstab:
         invest += 800
     amort = invest / ersparnis_v if ersparnis_v else 0
-    rendite = ersparnis_v * 20 - invest
+    steiger_faktor = ((1 + strompreissteigerung) ** 20 - 1) / strompreissteigerung
+    total_ev = verbrauchter_pv * strompreis * steiger_faktor
+    total_einspeise = einspeisung_v * 0.08 * 20
+    rendite = total_ev + total_einspeise - invest
     return {
         "ev": ev,
         "ersparnis": ersparnis_v,
@@ -238,20 +243,43 @@ col9.metric("20-Jahres-Rendite", f"{rendite20:,.0f} €")
 
 st.metric("CO₂-Einsparung", f"{co2_einsparung:,.0f} kg/Jahr")
 
-# Kreisdiagramme
-st.markdown(f"### Autarkiegrad")
-fig1, ax1 = plt.subplots(figsize=(3, 3))
-autarkie = verbrauchter_pv_strom / verbrauch if verbrauch else 0
-ax1.pie([autarkie, 1 - autarkie], labels=["PV-Strom", "Netzbezug"], autopct="%1.0f%%", colors=["#4CAF50", "#f44336"])
-ax1.axis("equal")
-st.pyplot(fig1)
+# Kreisdiagramme nebeneinander
+pie1, pie2 = st.columns(2)
 
-st.markdown(f"### ☀️ Eigenverbrauchsanteil ({verbrauchter_pv_strom:,.0f} kWh von {ertrag:,.0f} kWh Ertrag)")
-fig2, ax2 = plt.subplots(figsize=(3, 3))
-verbrauchsanteil = verbrauchter_pv_strom / ertrag if ertrag else 0
-ax2.pie([verbrauchsanteil, 1 - verbrauchsanteil], labels=["direkt genutzt", "Einspeisung"], autopct="%1.0f%%", colors=["#2196F3", "#FFC107"])
-ax2.axis("equal")
-st.pyplot(fig2)
+with pie1:
+    st.markdown(f"### Autarkiegrad")
+    fig1, ax1 = plt.subplots(figsize=(3, 3))
+    bezug = verbrauch - verbrauchter_pv_strom
+    autarkie = (
+    verbrauchter_pv_strom  / verbrauch
+    if verbrauch
+    else 0
+    )
+    ax1.pie(
+        [autarkie, 1 - autarkie],
+        labels=[f"PV-Strom {verbrauchter_pv_strom:,.0f} kWh", f"Netzbezug {bezug:,.0f} kWh"],
+        autopct="%1.0f%%",
+        colors=["#4CAF50", "#f02416"],
+        textprops={"fontsize": 8},
+    )
+    ax1.axis("equal")
+    st.pyplot(fig1)
+
+with pie2:
+    st.markdown(
+        f"### Eigenverbrauchsanteil"
+    )
+    fig2, ax2 = plt.subplots(figsize=(3, 3))
+    verbrauchsanteil = verbrauchter_pv_strom / ertrag if ertrag else 0
+    ax2.pie(
+        [verbrauchsanteil, 1 - verbrauchsanteil],
+        labels=[f"direkt genutzt {verbrauchter_pv_strom:,.0f} kWh", f"Einspeisung {einspeisung:,.0f} kWh"],
+        autopct="%1.0f%%",
+        colors=["#16E00F", "#2D4BF1"],
+        textprops={"fontsize": 8},
+    )
+    ax2.axis("equal")
+    st.pyplot(fig2)
 
 # DSGVO-konformes Opt-in
 zustimmung = st.checkbox("Ich stimme der Datenverarbeitung gemäß Datenschutzerklärung zu", value=False)
