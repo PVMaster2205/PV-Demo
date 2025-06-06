@@ -248,7 +248,10 @@ pie1, pie2 = st.columns(2)
 
 with pie1:
     st.markdown(f"### Autarkiegrad")
-    fig1, ax1 = plt.subplots(figsize=(3, 3))
+    fig1, ax1 = plt.subplots(figsize=(3, 3), constrained_layout=True)
+    
+    fig1.patch.set_alpha(0)
+    ax1.set_facecolor("none")
     bezug = verbrauch - verbrauchter_pv_strom
     autarkie = (
     verbrauchter_pv_strom  / verbrauch
@@ -257,29 +260,35 @@ with pie1:
     )
     ax1.pie(
         [autarkie, 1 - autarkie],
-        labels=[f"PV-Strom {verbrauchter_pv_strom:,.0f} kWh", f"Netzbezug {bezug:,.0f} kWh"],
+        labels=[f"PV-Strom      ", f"      Netzbezug"],
         autopct="%1.0f%%",
-        colors=["#4CAF50", "#f02416"],
-        textprops={"fontsize": 8},
+        colors=["#4CAF50", "#f55b50"],
+        textprops={"fontsize": 8, "color": "white"},
+        wedgeprops={"alpha": 0.6,"width": 0.3},
+        startangle=((1-autarkie) * 100 *1.8+135)
     )
     ax1.axis("equal")
-    st.pyplot(fig1)
+    st.pyplot(fig1, transparent=True)
 
 with pie2:
-    st.markdown(
-        f"### Eigenverbrauchsanteil"
-    )
-    fig2, ax2 = plt.subplots(figsize=(3, 3))
+    st.markdown(f"### Eigenverbrauchsanteil")
+    fig2, ax2 = plt.subplots(figsize=(3, 3), constrained_layout=True)
+    fig2.tight_layout()
+    fig2.patch.set_alpha(0)
+    ax2.set_facecolor("none")
     verbrauchsanteil = verbrauchter_pv_strom / ertrag if ertrag else 0
     ax2.pie(
         [verbrauchsanteil, 1 - verbrauchsanteil],
-        labels=[f"direkt genutzt {verbrauchter_pv_strom:,.0f} kWh", f"Einspeisung {einspeisung:,.0f} kWh"],
+        labels=[f"Eigennutzung", f"Einspeisung"],
         autopct="%1.0f%%",
-        colors=["#16E00F", "#2D4BF1"],
-        textprops={"fontsize": 8},
+        colors=["#4CAF50", "#2D4BF1"],
+        textprops={"fontsize": 8, "color": "white"},
+        wedgeprops={"alpha": 0.6,"width": 0.3},
+        startangle= (1-verbrauchsanteil) *100 * 1.8 +135
     )
     ax2.axis("equal")
-    st.pyplot(fig2)
+    fig2.tight_layout()
+    st.pyplot(fig2, transparent=True)
 
 # DSGVO-konformes Opt-in
 zustimmung = st.checkbox("Ich stimme der Datenverarbeitung gemäß Datenschutzerklärung zu", value=False)
