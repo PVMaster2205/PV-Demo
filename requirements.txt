@@ -3,3 +3,4 @@ fpdf
 requests
 matplotlib
 pandas
+altair

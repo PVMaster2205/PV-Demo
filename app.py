@@ -3,8 +3,10 @@ import streamlit as st
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
+import altair as alt
 import re
 import requests
+
 
 st.set_page_config(page_title="PV-Angebotsrechner", layout="wide")
 
@@ -88,21 +90,16 @@ with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
         anlagenleistung = dachflaeche / 7
     else:
         dachflaeche = None
-        neigung = None
+        neigung = 30
         ausrichtung = "Süd"
         default_leistung = verbrauch / 950
         anlagenleistung = st.slider("Geplante PV-Anlagengröße (kWp)", min_value=2.7, max_value=19.8, value=round(default_leistung, 2), step=0.45)
 
 email = st.text_input("📧 Ihre E-Mail-Adresse")
 
+from ertrag import berechne_ertrag
 # Ertragsberechnung
-faktor = {
-    "Süd": 1.0,
-    "Südost/Südwest": 0.95,
-    "Ost/West": 0.85,
-    "Nord": 0.7
-}[ausrichtung]
-ertrag = anlagenleistung * 950 * faktor
+ertrag = berechne_ertrag(anlagenleistung, ausrichtung,neigung)
 
 # Empfehlung und Investition
 speicher_staffel = [(3, 3000), (4, 4000), (6, 6000), (8, 7500), (10, 9000)]
@@ -164,7 +161,11 @@ eigenverbrauch = berechne_eigenverbrauch(
 verbrauchter_pv_strom = min(ertrag * eigenverbrauch, verbrauch)
 einspeisung = max(ertrag - verbrauchter_pv_strom, 0)
 einspeiseverguetung = einspeisung * 0.08
+
+
 ersparnis = verbrauchter_pv_strom * strompreis + einspeiseverguetung
+
+
 amortisation = investition_gesamt / ersparnis if ersparnis else 0
 co2_einsparung = ertrag * 0.38
 strompreissteigerung = 3.5 / 100
@@ -249,7 +250,6 @@ pie1, pie2 = st.columns(2)
 with pie1:
     st.markdown(f"### Autarkiegrad")
     fig1, ax1 = plt.subplots(figsize=(3, 3), constrained_layout=True)
-    
     fig1.patch.set_alpha(0)
     ax1.set_facecolor("none")
     bezug = verbrauch - verbrauchter_pv_strom
@@ -257,10 +257,11 @@ with pie1:
     verbrauchter_pv_strom  / verbrauch
     if verbrauch
     else 0
+    
     )
     ax1.pie(
         [autarkie, 1 - autarkie],
-        labels=[f"PV-Strom      ", f"      Netzbezug"],
+        labels=[f"PV-Strom     ", f"     Netzbezug"],
         autopct="%1.0f%%",
         colors=["#4CAF50", "#f55b50"],
         textprops={"fontsize": 8, "color": "white"},
@@ -273,7 +274,6 @@ with pie1:
 with pie2:
     st.markdown(f"### Eigenverbrauchsanteil")
     fig2, ax2 = plt.subplots(figsize=(3, 3), constrained_layout=True)
-    fig2.tight_layout()
     fig2.patch.set_alpha(0)
     ax2.set_facecolor("none")
     verbrauchsanteil = verbrauchter_pv_strom / ertrag if ertrag else 0
@@ -287,8 +287,31 @@ with pie2:
         startangle= (1-verbrauchsanteil) *100 * 1.8 +135
     )
     ax2.axis("equal")
-    fig2.tight_layout()
+    
     st.pyplot(fig2, transparent=True)
+
+# Einnahmen vs. Ausgaben über 20 Jahre
+st.markdown("### Einnahmen vs. Ausgaben")
+betriebskosten_jahr = investition_gesamt * 0.025
+jahre = list(range(21))
+ausgaben = [investition_gesamt + betriebskosten_jahr * j for j in jahre]
+
+einnahmen = [ersparnis * j for j in jahre]
+
+df_lines = pd.DataFrame({"Jahr": jahre, "Ausgaben": ausgaben, "Einnahmen": einnahmen})
+chart = (
+    alt.Chart(df_lines)
+    .transform_fold(["Ausgaben", "Einnahmen"], as_=["Art", "Wert"])
+    .mark_line(point=True)
+    .encode(
+        x=alt.X("Jahr:Q", title="Jahr"),
+        y=alt.Y("Wert:Q", title="EUR"),
+        color="Art:N",
+        tooltip=["Jahr:Q", "Art:N", "Wert:Q"]
+    )
+    .interactive()
+)
+st.altair_chart(chart, use_container_width=True)
 
 # DSGVO-konformes Opt-in
 zustimmung = st.checkbox("Ich stimme der Datenverarbeitung gemäß Datenschutzerklärung zu", value=False)

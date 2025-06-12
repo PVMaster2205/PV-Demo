@@ -8,6 +8,9 @@ Ein interaktives Tool zur Berechnung und Simulation von Photovoltaik-Anlagen ink
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+Seit dem letzten Update fließt auch die Dachneigung in die Ertragsberechnung ein.
 
 ## Hinweis zur Autarkieberechnung
 
