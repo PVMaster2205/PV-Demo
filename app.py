@@ -85,8 +85,8 @@ with st.expander("⚙️ Zusatzausstattung & Dachdaten (optional)"):
     mit_dachdaten = st.checkbox("Ich kenne Daten zur Dachfläche und -ausrichtung")
     if mit_dachdaten:
         dachflaeche = st.number_input("Dachfläche nutzbar (m²)", min_value=5, max_value=200)
-        neigung = st.slider("Dachneigung (Grad)", 0, 90, 30)
-        ausrichtung = st.selectbox("Dachausrichtung", ["Süd", "Südost/Südwest", "Ost/West", "Nord"])
+        neigung = st.slider("Dachneigung (Grad)", 0, 90, 30,step=5)
+        ausrichtung = st.selectbox("Dachausrichtung", ["Süd", "Südost/Südwest", "Ost/West", "Nordost/Nordwest", "Nord"])
         anlagenleistung = dachflaeche / 7
     else:
         dachflaeche = None

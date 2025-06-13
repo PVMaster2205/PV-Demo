@@ -17,6 +17,7 @@ def berechne_ertrag(anlage_kwp: float, ausrichtung: str, neigung: Optional[float
         "Süd": 1.0,
         "Südost/Südwest": 0.95,
         "Ost/West": 0.85,
+        "Nordost/Nordwest": 0.8,
         "Nord": 0.7,
     }.get(ausrichtung, 1.0)
 
